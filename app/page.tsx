@@ -1,7 +1,7 @@
 export default function Home() {
   return (
     <div className="relative min-h-screen overflow-hidden bg-gradient-to-b from-rose-900 via-black to-rose-950 text-white">
-      {/* Floating hearts background */}
+      {/* Floating hearts background  */}
       <div className="pointer-events-none absolute inset-0">
         {Array.from({ length: 18 }).map((_, i) => (
           <div
