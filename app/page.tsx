@@ -1,88 +1,212 @@
 "use client";
+
+import { useEffect, useState, useCallback } from "react";
+
+const HEART_COLORS = ["#dc2626", "#f87171", "#f9a8d4", "#fff5f5", "#fecaca"];
+
+type Phase = "intro" | "transitioning" | "countdown";
+
+// Target: Midnight Feb 14, 2026 (Valentine's Day)
+const getTargetDate = () => new Date("2026-02-14T00:00:00");
+
+interface TimeLeft {
+  days: number;
+  hours: number;
+  minutes: number;
+  seconds: number;
+  total: number;
+}
+
 export default function Home() {
+  const [phase, setPhase] = useState<Phase>("intro");
+  const [timeLeft, setTimeLeft] = useState<TimeLeft>({
+    days: 0,
+    hours: 0,
+    minutes: 0,
+    seconds: 0,
+    total: 0,
+  });
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    const calculateTimeLeft = (): TimeLeft => {
+      const now = new Date();
+      const target = getTargetDate();
+      const difference = target.getTime() - now.getTime();
+
+      if (difference <= 0) {
+        return { days: 0, hours: 0, minutes: 0, seconds: 0, total: 0 };
+      }
+
+      return {
+        days: Math.floor(difference / (1000 * 60 * 60 * 24)),
+        hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
+        minutes: Math.floor((difference / 1000 / 60) % 60),
+        seconds: Math.floor((difference / 1000) % 60),
+        total: difference,
+      };
+    };
+
+    setTimeLeft(calculateTimeLeft());
+    const timer = setInterval(() => setTimeLeft(calculateTimeLeft()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const startTransition = useCallback(() => {
+    setPhase("transitioning");
+    setTimeout(() => setPhase("countdown"), 1200);
+  }, []);
+
   return (
-    <div className="relative min-h-screen overflow-hidden bg-gradient-to-b from-rose-900 via-black to-rose-950 text-white">
-      {/* Floating hearts background  */}
-      <div className="pointer-events-none absolute inset-0">
-        {Array.from({ length: 18 }).map((_, i) => (
-          <div
-            key={i}
-            className="absolute"
-            style={{
-              left: `${(i * 13) % 100}%`,
-              top: "100%",
-              animation: "float-heart linear infinite",
-              animationDuration: `${18 + (i % 5) * 3}s`,
-              animationDelay: `${-i * 1.7}s`,
-              opacity: 0.35 + (i % 3) * 0.1,
-            }}
-          >
-            <span className="text-4xl sm:text-5xl text-rose-400/50 drop-shadow-[0_0_18px_rgba(244,114,182,0.45)]">
+    <div className="relative min-h-screen overflow-hidden bg-[#fef2f2]">
+      {/* Expanding hearts layer (cycle) — red, pink, white */}
+      <div
+        className="pointer-events-none absolute inset-0 flex items-center justify-center"
+        aria-hidden
+      >
+        {Array.from({ length: 24 }).map((_, i) => {
+          const delay = `${(i * 0.12) % 2}s`;
+          return (
+            <span
+              key={i}
+              className="absolute text-3xl xs:text-4xl sm:text-5xl md:text-6xl select-none"
+              style={{
+                left: `${15 + (i * 3.2) % 70}%`,
+                top: `${10 + (i * 4) % 80}%`,
+                color: HEART_COLORS[i % HEART_COLORS.length],
+                animation: `heart-expand 3.5s ease-in-out ${delay} infinite`,
+              }}
+            >
               ♥
             </span>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
+      {/* Dramatic red flash overlay during transition */}
+      {phase === "transitioning" && (
+        <div
+          className="pointer-events-none absolute inset-0 z-30 bg-red-500 animate-[transition-flash_1.2s_ease-out_forwards]"
+          aria-hidden
+        />
+      )}
+
       {/* Main content */}
-      <main className="relative z-10 flex min-h-screen items-center justify-center px-4 py-16">
-        <div className="max-w-3xl w-full">
-          <div className="backdrop-blur-2xl bg-white/5 border border-white/10 rounded-3xl shadow-[0_18px_80px_rgba(0,0,0,0.7)] px-8 py-10 sm:px-12 sm:py-14">
-            <p className="text-xs uppercase tracking-[0.35em] text-rose-200/80 mb-3">
-              VALENTINE&apos;S DAY • 2026
-            </p>
-            <h1 className="text-4xl sm:text-5xl md:text-6xl font-semibold tracking-tight mb-6">
-              Love, but make it&nbsp;
-              <span className="inline-block bg-gradient-to-r from-rose-300 via-fuchsia-300 to-sky-200 bg-clip-text text-transparent">
-                modern.
-              </span>
-            </h1>
-            <p className="text-base sm:text-lg text-zinc-200/90 leading-relaxed max-w-xl mb-8">
-              A minimal Valentine&apos;s landing page with soft neon glow,
-              drifting hearts, and copy that feels as intentional as the person
-              you&apos;re sending it to.
-            </p>
+      <main className="relative z-10 flex min-h-screen flex-col items-center justify-center px-4 py-8 sm:py-12">
+        {/* ——— INTRO ——— */}
+        {(phase === "intro" || phase === "transitioning") && (
+          <div
+            className={`absolute inset-0 flex flex-col items-center justify-center px-4 transition-none ${
+              phase === "transitioning"
+                ? "animate-[intro-exit_0.8s_ease-in_forwards]"
+                : ""
+            }`}
+          >
+            <div className="flex w-full max-w-2xl flex-col items-center gap-6 sm:gap-8 text-center">
+              {/* Readable card behind intro text */}
+              <div className="rounded-3xl bg-white/95 px-6 py-8 sm:px-10 sm:py-12 shadow-xl ring-2 ring-red-200/60 backdrop-blur-sm">
+                <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-red-900 mb-4 sm:mb-6 tracking-tight drop-shadow-sm">
+                  Hey Neilll 💕
+                </h1>
+                <p className="text-lg sm:text-xl md:text-2xl text-red-800 leading-relaxed font-medium max-w-xl mx-auto">
+                  We&apos;re glad you&apos;re starting to find us.
+                </p>
+              </div>
 
-            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-stretch sm:items-center">
-              <button className="inline-flex items-center justify-center rounded-full bg-white text-zinc-900 px-6 py-3 text-sm sm:text-base font-medium tracking-tight shadow-[0_10px_40px_rgba(255,255,255,0.35)] hover:shadow-[0_12px_48px_rgba(255,255,255,0.45)] hover:-translate-y-0.5 transition-all duration-200">
-                Send a digital love note
-              </button>
-              <button className="inline-flex items-center justify-center rounded-full border border-white/30 px-6 py-3 text-sm sm:text-base font-medium tracking-tight text-zinc-100/90 hover:bg-white/10 hover:border-white/60 transition-all duration-200">
-                Preview the playlist
-              </button>
-            </div>
-
-            <div className="mt-8 flex flex-wrap items-center gap-3 text-xs text-zinc-300/70">
-              <span className="inline-flex items-center gap-2 rounded-full bg-black/40 px-3 py-1 border border-white/10">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                Live for the next 24 hours
-              </span>
-              <span className="text-zinc-400/80">
-                Crafted with intention. Best viewed with someone in mind.
-              </span>
+              {phase === "intro" && (
+                <button
+                  type="button"
+                  onClick={startTransition}
+                  className="mt-4 rounded-2xl bg-red-600 px-8 py-4 text-lg font-semibold text-white shadow-lg shadow-red-500/40 transition hover:bg-red-700 hover:shadow-red-500/50 active:scale-[0.98] animate-[text-reveal_0.6s_ease-out_0.4s_both]"
+                >
+                  Continue →
+                </button>
+              )}
             </div>
           </div>
-        </div>
-      </main>
+        )}
 
-      <style jsx global>{`
-        @keyframes float-heart {
-          0% {
-            transform: translate3d(0, 0, 0) scale(1);
-            opacity: 0;
-          }
-          10% {
-            opacity: 1;
-          }
-          50% {
-            transform: translate3d(-20px, -50vh, 0) scale(1.1);
-          }
-          100% {
-            transform: translate3d(20px, -110vh, 0) scale(1.2);
-            opacity: 0;
-          }
-        }
-      `}</style>
+        {/* ——— COUNTDOWN (after transition) ——— */}
+        {phase === "countdown" && (
+          <div className="flex w-full max-w-4xl flex-col items-center gap-6 sm:gap-8 text-center animate-[countdown-enter_0.8s_ease-out]">
+            {/* Message — high contrast */}
+            <div className="flex flex-col items-center gap-3 sm:gap-4">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-red-900 drop-shadow-sm">
+                Your first clue arrives at midnight.
+              </h2>
+              <p className="text-base sm:text-lg text-red-800 max-w-xl leading-relaxed px-2">
+                When Valentine&apos;s Day begins — get ready, Neil 👀
+              </p>
+            </div>
+
+            {/* Countdown timer — readable labels and numbers */}
+            <div className="flex flex-col items-center gap-4 sm:gap-6 w-full">
+              <p className="text-sm sm:text-base uppercase tracking-[0.25em] text-red-900/80 font-medium">
+                Time until your clue unlocks
+              </p>
+
+              {mounted && timeLeft.total > 0 ? (
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6 w-full max-w-3xl">
+                  <div className="flex flex-col items-center gap-2 sm:gap-3">
+                    <div className="text-4xl xs:text-5xl sm:text-6xl md:text-7xl font-bold tabular-nums text-red-800 drop-shadow-md animate-[countdown-pulse_2s_ease-in-out_infinite]">
+                      {String(timeLeft.days).padStart(2, "0")}
+                    </div>
+                    <p className="text-sm font-medium text-red-900 uppercase tracking-wider">
+                      Days
+                    </p>
+                  </div>
+                  <div className="flex flex-col items-center gap-2 sm:gap-3">
+                    <div className="text-4xl xs:text-5xl sm:text-6xl md:text-7xl font-bold tabular-nums text-red-800 drop-shadow-md animate-[countdown-pulse_2s_ease-in-out_0.5s_infinite]">
+                      {String(timeLeft.hours).padStart(2, "0")}
+                    </div>
+                    <p className="text-sm font-medium text-red-900 uppercase tracking-wider">
+                      Hours
+                    </p>
+                  </div>
+                  <div className="flex flex-col items-center gap-2 sm:gap-3">
+                    <div className="text-4xl xs:text-5xl sm:text-6xl md:text-7xl font-bold tabular-nums text-red-800 drop-shadow-md animate-[countdown-pulse_2s_ease-in-out_1s_infinite]">
+                      {String(timeLeft.minutes).padStart(2, "0")}
+                    </div>
+                    <p className="text-sm font-medium text-red-900 uppercase tracking-wider">
+                      Minutes
+                    </p>
+                  </div>
+                  <div className="flex flex-col items-center gap-2 sm:gap-3">
+                    <div
+                      className={`text-4xl xs:text-5xl sm:text-6xl md:text-7xl font-bold tabular-nums text-red-800 drop-shadow-md ${
+                        timeLeft.seconds <= 10 && timeLeft.seconds > 0
+                          ? "animate-[countdown-final_0.5s_ease-in-out_infinite]"
+                          : "animate-[countdown-pulse_2s_ease-in-out_1.5s_infinite]"
+                      }`}
+                    >
+                      {String(timeLeft.seconds).padStart(2, "0")}
+                    </div>
+                    <p className="text-sm font-medium text-red-900 uppercase tracking-wider">
+                      Seconds
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-4xl xs:text-5xl sm:text-6xl md:text-7xl font-bold text-red-800">
+                  {mounted ? "00 : 00 : 00 : 00" : "Loading..."}
+                </div>
+              )}
+
+              <p className="text-base sm:text-lg text-red-800 font-medium mt-2">
+                ⏰ Midnight • February 14th, 2026
+              </p>
+            </div>
+
+            <p className="text-sm sm:text-base text-red-700 mt-2">
+              The wait is part of the mystery... or something like that 😉
+            </p>
+          </div>
+        )}
+      </main>
     </div>
   );
 }
