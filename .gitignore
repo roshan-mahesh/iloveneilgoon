@@ -1,9 +1,5 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
-# Root level files that shouldn't be committed
-/package-lock.json
-/package.json
-
 # dependencies
 node_modules/
 .pnp
