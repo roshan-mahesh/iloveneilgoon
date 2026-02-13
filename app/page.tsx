@@ -1,65 +1,87 @@
-import Image from "next/image";
-// this is a commentt
 export default function Home() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+    <div className="relative min-h-screen overflow-hidden bg-gradient-to-b from-rose-900 via-black to-rose-950 text-white">
+      {/* Floating hearts background */}
+      <div className="pointer-events-none absolute inset-0">
+        {Array.from({ length: 18 }).map((_, i) => (
+          <div
+            key={i}
+            className="absolute"
+            style={{
+              left: `${(i * 13) % 100}%`,
+              top: "100%",
+              animation: "float-heart linear infinite",
+              animationDuration: `${18 + (i % 5) * 3}s`,
+              animationDelay: `${-i * 1.7}s`,
+              opacity: 0.35 + (i % 3) * 0.1,
+            }}
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+            <span className="text-4xl sm:text-5xl text-rose-400/50 drop-shadow-[0_0_18px_rgba(244,114,182,0.45)]">
+              ♥
+            </span>
+          </div>
+        ))}
+      </div>
+
+      {/* Main content */}
+      <main className="relative z-10 flex min-h-screen items-center justify-center px-4 py-16">
+        <div className="max-w-3xl w-full">
+          <div className="backdrop-blur-2xl bg-white/5 border border-white/10 rounded-3xl shadow-[0_18px_80px_rgba(0,0,0,0.7)] px-8 py-10 sm:px-12 sm:py-14">
+            <p className="text-xs uppercase tracking-[0.35em] text-rose-200/80 mb-3">
+              VALENTINE&apos;S DAY • 2026
+            </p>
+            <h1 className="text-4xl sm:text-5xl md:text-6xl font-semibold tracking-tight mb-6">
+              Love, but make it&nbsp;
+              <span className="inline-block bg-gradient-to-r from-rose-300 via-fuchsia-300 to-sky-200 bg-clip-text text-transparent">
+                modern.
+              </span>
+            </h1>
+            <p className="text-base sm:text-lg text-zinc-200/90 leading-relaxed max-w-xl mb-8">
+              A minimal Valentine&apos;s landing page with soft neon glow,
+              drifting hearts, and copy that feels as intentional as the person
+              you&apos;re sending it to.
+            </p>
+
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-stretch sm:items-center">
+              <button className="inline-flex items-center justify-center rounded-full bg-white text-zinc-900 px-6 py-3 text-sm sm:text-base font-medium tracking-tight shadow-[0_10px_40px_rgba(255,255,255,0.35)] hover:shadow-[0_12px_48px_rgba(255,255,255,0.45)] hover:-translate-y-0.5 transition-all duration-200">
+                Send a digital love note
+              </button>
+              <button className="inline-flex items-center justify-center rounded-full border border-white/30 px-6 py-3 text-sm sm:text-base font-medium tracking-tight text-zinc-100/90 hover:bg-white/10 hover:border-white/60 transition-all duration-200">
+                Preview the playlist
+              </button>
+            </div>
+
+            <div className="mt-8 flex flex-wrap items-center gap-3 text-xs text-zinc-300/70">
+              <span className="inline-flex items-center gap-2 rounded-full bg-black/40 px-3 py-1 border border-white/10">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                Live for the next 24 hours
+              </span>
+              <span className="text-zinc-400/80">
+                Crafted with intention. Best viewed with someone in mind.
+              </span>
+            </div>
+          </div>
         </div>
       </main>
+
+      <style jsx global>{`
+        @keyframes float-heart {
+          0% {
+            transform: translate3d(0, 0, 0) scale(1);
+            opacity: 0;
+          }
+          10% {
+            opacity: 1;
+          }
+          50% {
+            transform: translate3d(-20px, -50vh, 0) scale(1.1);
+          }
+          100% {
+            transform: translate3d(20px, -110vh, 0) scale(1.2);
+            opacity: 0;
+          }
+        }
+      `}</style>
     </div>
   );
 }
