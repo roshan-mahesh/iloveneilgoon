@@ -1,3 +1,4 @@
+"use client";
 export default function Home() {
   return (
     <div className="relative min-h-screen overflow-hidden bg-gradient-to-b from-rose-900 via-black to-rose-950 text-white">
