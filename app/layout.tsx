@@ -13,7 +13,7 @@ const robotoMono = Roboto_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "iloveneilgoon",
+  title: "I Love Neil M",
   description: "A little something for you.",
 };
 

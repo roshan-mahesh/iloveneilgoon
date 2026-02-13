@@ -108,7 +108,7 @@ export default function Home() {
               {/* Readable card behind intro text */}
               <div className="rounded-3xl bg-white/95 px-6 py-8 sm:px-10 sm:py-12 shadow-xl ring-2 ring-red-200/60 backdrop-blur-sm">
                 <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-red-900 mb-4 sm:mb-6 tracking-tight drop-shadow-sm">
-                  Hey Neilll 💕
+                  Hey Neilll M💕
                 </h1>
                 <p className="text-lg sm:text-xl md:text-2xl text-red-800 leading-relaxed font-medium max-w-xl mx-auto">
                   We&apos;re glad you&apos;re starting to find us.
