@@ -1,5 +1,4 @@
 {
-  "_comment": "Cron runs at 12:00 AM PST (08:00 UTC). Only runs in production. Set RESEND_API_KEY, DAILY_EMAIL_RECIPIENTS, and CRON_SECRET in Vercel Environment Variables.",
   "crons": [
     {
       "path": "/api/daily-email",
