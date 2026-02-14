@@ -227,6 +227,9 @@ export default function Home() {
                     {mounted ? "00 : 00 : 00 : 00" : "Loading..."}
                   </div>
                 )}
+                <p className="text-sm text-muted-foreground italic pt-2">
+                  p.s. check your email
+                </p>
               </CardContent>
             </Card>
           </div>
