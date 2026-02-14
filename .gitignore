@@ -38,6 +38,9 @@ yarn-error.log*
 .pnpm-debug.log*
 lerna-debug.log*
 
+# local test script (sends daily email to recipients)
+scripts/send-test-email.mjs
+
 # env files (can opt-in for committing if needed)
 .env
 .env*.local
