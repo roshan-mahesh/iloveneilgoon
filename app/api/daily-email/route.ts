@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const from = process.env.RESEND_FROM ?? "Daily Update <noreply@iloveneil.gay>";
+  const from = process.env.RESEND_FROM ?? "iloveneil.gay <noreply@iloveneil.gay>";
 
   // Resend allows 2 requests/second; space sends to avoid 429 rate limit
   const delayMs = 600;
@@ -47,8 +47,8 @@ export async function GET(request: NextRequest) {
       const { data, error } = await resend.emails.send({
         from,
         to: email,
-        subject: "Neil's Your First Clue Is Here",
-        html: `<p>Neily.....❤️check our website neily poo, your clue awaits...</p>`,
+        subject: "Neil.... Your first puzzle is available 🧩✨",
+        html: `<p>Neily pooo 🧩✨💕 the puzzle, your first puzzle dropped 🎉🔮💫🎊🪄🌟💎🔥❤️🌈🦋🌸✨🎯💖🕵️‍♀️🎭🌺🦄⚡️🍀🌙☀️🎈🎁🛸👾🤖💜🩵💛🩷</p>`,
       });
       if (error) {
         console.error(`[daily-email] Failed for ${email}:`, error);
