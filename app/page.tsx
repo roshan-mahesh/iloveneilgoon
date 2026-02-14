@@ -228,7 +228,7 @@ export default function Home() {
                   </div>
                 )}
                 <p className="text-sm text-muted-foreground italic pt-2">
-                  p.s. check your email
+                  p.s. check your email, especially your spam
                 </p>
               </CardContent>
             </Card>
