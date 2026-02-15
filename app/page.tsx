@@ -23,7 +23,7 @@ const getTargetDate = () => new Date("2026-02-15T00:00:00");
 //    - To test "unlocked" right now: set to past time, e.g. setHours(0, 0, 0, 0) and setDate(d.getDate() - 1).
 const getSecondClueUnlockTime = () => {
   const d = new Date();
-  d.setHours(20, 0, 0, 0); // 8pm today (beta)
+  d.setHours(24, 0, 0, 0); // 8pm today (beta)
   return d;
 };
 // ======================================================================
