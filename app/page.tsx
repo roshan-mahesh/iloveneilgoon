@@ -13,19 +13,12 @@ type CellState = "correct" | "present" | "absent";
 
 // ========== COUNTDOWN & UNLOCK TIMES (change these to test) ==========
 // 1. getTargetDate: used for the countdown display (e.g. "X days until Feb 15").
-//    Change to whenever you want the countdown to reach zero (e.g. midnight Feb 15).
-const getTargetDate = () => new Date("2026-02-15T00:00:00");
+//    TEST: 15 seconds from now so countdown hits zero quickly. Revert to: new Date("2026-02-15T00:00:00")
+const getTargetDate = () => new Date(Date.now() + 15_000);
 
 // 2. getSecondClueUnlockTime: when the "See 2nd clue" button becomes clickable.
-//    - For BETA: set to a time soon (e.g. 8pm today = setHours(20, 0, 0, 0)).
-//    - For PRODUCTION: set to midnight Feb 14, e.g.:
-//        const d = new Date("2026-02-14T00:00:00"); return d;
-//    - To test "unlocked" right now: set to past time, e.g. setHours(0, 0, 0, 0) and setDate(d.getDate() - 1).
-const getSecondClueUnlockTime = () => {
-  const d = new Date();
-  d.setHours(24, 0, 0, 0); // 8pm today (beta)
-  return d;
-};
+//    TEST: past time so 2nd clue is unlocked now. Revert to: d.setHours(24, 0, 0, 0); return d;
+const getSecondClueUnlockTime = () => new Date(0); // unlocked (past)
 // ======================================================================
 
 interface TimeLeft {
@@ -57,7 +50,7 @@ const calculateTimeLeft = (): TimeLeft => {
 const QUORDLE_ROWS = 9;
 
 export default function Home() {
-  const [phase, setPhase] = useState<Phase>("intro");
+  const [phase, setPhase] = useState<Phase>("quordle");
   const [timeLeft, setTimeLeft] = useState<TimeLeft>(() => calculateTimeLeft());
   const [mounted, setMounted] = useState(false);
   const [quordleHistory, setQuordleHistory] = useState<{ guess: string; feedbacks: CellState[][] }[]>([]);
@@ -83,6 +76,13 @@ export default function Home() {
     const timer = setInterval(tick, 1000);
     return () => clearInterval(timer);
   }, []);
+
+  // When countdown hits zero, auto-advance to the second clue (Quordle)
+  useEffect(() => {
+    if (phase === "countdown" && timeLeft.total <= 0 && timeLeft.total !== undefined) {
+      setPhase("quordle");
+    }
+  }, [phase, timeLeft.total]);
 
   const allFourSolved =
     quordleHistory.length > 0 &&

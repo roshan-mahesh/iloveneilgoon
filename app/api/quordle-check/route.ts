@@ -36,11 +36,21 @@ export async function POST(request: Request) {
     const body = (await request.json()) as { guess?: string; previousGuesses?: string[] };
     const { guess, previousGuesses = [] } = body;
     const raw = process.env.PUZZLE ?? "";
-    const words = raw.split(",").map((w) => w.trim().toLowerCase()).filter((w) => w.length === 5);
+    const parts = raw.split(",").map((w) => w.trim().toLowerCase()).filter((w) => w.length === 5);
+    // Allow 4 words (real Quordle) or 1 word repeated for all 4 grids (testing)
+    const words =
+      parts.length === 4
+        ? parts
+        : parts.length === 1
+          ? [parts[0], parts[0], parts[0], parts[0]]
+          : [];
 
     if (words.length !== 4) {
       return NextResponse.json(
-        { error: "PUZZLE must be 4 comma-separated 5-letter words" },
+        {
+          error:
+            "Server config: set PUZZLE in .env to either four 5-letter words (a,b,c,d) or one 5-letter word for testing.",
+        },
         { status: 500 }
       );
     }
