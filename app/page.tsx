@@ -8,17 +8,19 @@ import { Input } from "@/components/ui/input";
 
 const HEART_COLORS = ["#dc2626", "#f87171", "#f9a8d4", "#fff5f5", "#fecaca"];
 
-type Phase = "intro" | "countdown" | "quordle" | "theme" | "reveal";
-type CellState = "correct" | "present" | "absent";
+type Phase = "intro" | "countdown" | "theme" | "reveal";
 
 // ========== COUNTDOWN & UNLOCK TIMES (change these to test) ==========
-// 1. getTargetDate: used for the countdown display (e.g. "X days until Feb 15").
-//    TEST: 15 seconds from now so countdown hits zero quickly. Revert to: new Date("2026-02-15T00:00:00")
-const getTargetDate = () => new Date(Date.now() + 15_000);
+// 1. getTargetDate: countdown target — next hint tonight at midnight (Feb 16th).
+const getTargetDate = () => new Date("2026-02-16T00:00:00");
 
-// 2. getSecondClueUnlockTime: when the "See 2nd clue" button becomes clickable.
-//    TEST: past time so 2nd clue is unlocked now. Revert to: d.setHours(24, 0, 0, 0); return d;
-const getSecondClueUnlockTime = () => new Date(0); // unlocked (past)
+// 2. getSecondClueUnlockTime: when "Get next hint" appears on countdown page.
+//    Beta: 8pm today. Production: midnight Feb 14 — use new Date("2026-02-14T00:00:00")
+const getSecondClueUnlockTime = () => {
+  const d = new Date();
+  d.setHours(20, 0, 0, 0);
+  return d;
+};
 // ======================================================================
 
 interface TimeLeft {
@@ -47,21 +49,16 @@ const calculateTimeLeft = (): TimeLeft => {
   };
 };
 
-const QUORDLE_ROWS = 9;
-
 export default function Home() {
-  const [phase, setPhase] = useState<Phase>("quordle");
+  const [phase, setPhase] = useState<Phase>("intro");
   const [timeLeft, setTimeLeft] = useState<TimeLeft>(() => calculateTimeLeft());
   const [mounted, setMounted] = useState(false);
-  const [quordleHistory, setQuordleHistory] = useState<{ guess: string; feedbacks: CellState[][] }[]>([]);
-  const [quordleGuess, setQuordleGuess] = useState("");
-  const [quordleChecking, setQuordleChecking] = useState(false);
-  const [quordleError, setQuordleError] = useState("");
   const [themeAnswer, setThemeAnswer] = useState("");
   const [themeError, setThemeError] = useState("");
   const [themeChecking, setThemeChecking] = useState(false);
   const [secondClueUnlocked, setSecondClueUnlocked] = useState(false);
   const [revealImageExpanded, setRevealImageExpanded] = useState(false);
+  const [countdownExpandedImage, setCountdownExpandedImage] = useState<"clue1" | "clue2" | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -77,62 +74,7 @@ export default function Home() {
     return () => clearInterval(timer);
   }, []);
 
-  // When countdown hits zero, auto-advance to the second clue (Quordle)
-  useEffect(() => {
-    if (phase === "countdown" && timeLeft.total <= 0 && timeLeft.total !== undefined) {
-      setPhase("quordle");
-    }
-  }, [phase, timeLeft.total]);
-
-  const allFourSolved =
-    quordleHistory.length > 0 &&
-    [0, 1, 2, 3].every((gridIndex) =>
-      quordleHistory.some((h) => h.feedbacks[gridIndex].every((c) => c === "correct"))
-    );
-
-  const quordleFailed =
-    quordleHistory.length >= QUORDLE_ROWS && !allFourSolved;
-
-  const showQuordle = useCallback(() => setPhase("quordle"), []);
-  const goToSecondClue = useCallback(() => {
-    if (secondClueUnlocked) setPhase("quordle");
-    else setPhase("countdown");
-  }, [secondClueUnlocked]);
-
-  const submitQuordleGuess = useCallback(async () => {
-    const g = quordleGuess.trim().toLowerCase();
-    if (g.length !== 5 || quordleChecking || quordleHistory.length >= QUORDLE_ROWS) return;
-    setQuordleError("");
-    setQuordleChecking(true);
-    try {
-      const res = await fetch("/api/quordle-check", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          guess: g,
-          previousGuesses: quordleHistory.map((h) => h.guess),
-        }),
-      });
-      const data = (await res.json()) as { error?: string; feedbacks?: CellState[][] };
-      if (data.error) {
-        setQuordleError(data.error);
-        setQuordleChecking(false);
-        return;
-      }
-      if (!data.feedbacks || data.feedbacks.length !== 4) {
-        setQuordleError("Invalid response");
-        setQuordleChecking(false);
-        return;
-      }
-      const feedbacks: CellState[][] = data.feedbacks;
-      setQuordleHistory((prev) => [...prev, { guess: g, feedbacks }]);
-      setQuordleGuess("");
-    } catch {
-      setQuordleError("Something went wrong");
-    } finally {
-      setQuordleChecking(false);
-    }
-  }, [quordleGuess, quordleChecking, quordleHistory]);
+  const showCountdown = useCallback(() => setPhase("countdown"), []);
 
   const submitTheme = useCallback(async () => {
     setThemeError("");
@@ -218,7 +160,7 @@ export default function Home() {
 
       {/* Main content */}
       <main className="relative z-10 flex min-h-screen flex-col items-center justify-center px-4 py-8 sm:py-12">
-        {/* ——— LANDING: one button "See 2nd clue" ——— */}
+        {/* ——— LANDING (from e04b93a structure) ——— */}
         {phase === "intro" && (
           <div className="absolute inset-0 flex flex-col items-center justify-center px-4">
             <div
@@ -226,25 +168,25 @@ export default function Home() {
                 mounted ? "opacity-100" : "opacity-0"
               }`}
             >
-              <Card className="juicy-card w-full max-w-2xl border-0 bg-gradient-to-b from-white to-rose-50/50 backdrop-blur-md shadow-xl shadow-rose-900/10 animate-[text-reveal_0.6s_ease-out_0.3s_both]">
+              <Card className="juicy-card w-full max-w-2xl border-0 bg-white/90 backdrop-blur-md animate-[text-reveal_0.6s_ease-out_0.3s_both]">
                 <CardHeader className="text-center space-y-4 pb-2 px-8 sm:px-10 pt-8 sm:pt-10">
                   <CardTitle className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground tracking-tight drop-shadow-sm">
-                    We're almost there, Neil honey — are you ready for the second clue? 💕
+                    Hope you liked the first 2 clues, Neil — ready for your third and final one?!?! 💕
                   </CardTitle>
                   <CardDescription className="text-lg sm:text-xl text-muted-foreground leading-relaxed font-medium">
-                    I hope you liked the first one as much as I like you. One more puzzle and then something sweet…
+                    Your next hint drops at midnight. I hope you liked the puzzles as much as I like you.
                   </CardDescription>
                   <p className="text-lg sm:text-xl font-semibold text-primary">
                     Happy Valentine's Day, Neily pooo!
                   </p>
                 </CardHeader>
-                <CardContent className="flex flex-col gap-3 justify-center pt-2 pb-8 sm:pb-10">
+                <CardContent className="flex justify-center pt-2 pb-8 sm:pb-10">
                   <Button
                     size="lg"
-                    onClick={goToSecondClue}
-                    className="juicy-btn rounded-2xl px-8 py-6 text-lg font-semibold text-white border-0"
+                    onClick={showCountdown}
+                    className="juicy-btn rounded-2xl px-10 py-6 text-lg font-semibold text-white border-0 animate-[text-reveal_0.6s_ease-out_0.4s_both]"
                   >
-                    See 2nd clue →
+                    See countdown →
                   </Button>
                 </CardContent>
               </Card>
@@ -252,95 +194,113 @@ export default function Home() {
           </div>
         )}
 
-        {/* ——— COUNTDOWN PAGE: left = heart + Clue 1, right = countdown (old layout from git) ——— */}
+        {/* ——— COUNTDOWN PAGE: left = Hint 1 & 2 hearts, right = countdown card ——— */}
         {phase === "countdown" && (
           <div className="w-full max-w-5xl flex flex-col lg:flex-row items-center justify-center gap-8 lg:gap-12 px-4 animate-[countdown-enter_0.8s_ease-out]">
-            {/* Left: heart with milk + Clue 1 */}
-            <div className="flex flex-col items-center gap-4 flex-1 w-full max-w-md">
-              <p className="text-sm uppercase tracking-[0.25em] text-muted-foreground font-semibold">
-                Clue 1
-              </p>
-              <div
-                className="relative w-full max-w-[320px] aspect-square"
-                style={{
-                  filter: "drop-shadow(0 0 24px rgba(220,38,38,0.2)) drop-shadow(0 20px 40px -12px rgba(185,28,28,0.35))",
-                }}
-              >
-                <svg
-                  className="absolute inset-0 w-full h-full"
-                  viewBox="0 0 100 100"
-                  preserveAspectRatio="xMidYMid meet"
-                  aria-hidden
+            {/* Left: Hint 1 & Hint 2 in hearts — as big as the card, a bit smaller, stacked */}
+            <div className="flex flex-col items-center justify-center gap-6 flex-1 w-full min-w-0 max-w-[420px] lg:max-w-[480px]">
+              <div className="flex flex-col items-center gap-2 w-full">
+                <p className="text-base font-semibold uppercase tracking-[0.2em] text-foreground">
+                  Hint 1
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setCountdownExpandedImage("clue1")}
+                  className="relative w-full aspect-square max-w-[420px] cursor-pointer border-0 bg-transparent p-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 rounded-full mx-auto"
+                  style={{
+                    filter: "drop-shadow(0 0 28px rgba(220,38,38,0.25)) drop-shadow(0 24px 48px -12px rgba(185,28,28,0.4))",
+                  }}
+                  aria-label="Expand hint 1"
                 >
-                  <defs>
-                    <linearGradient id="heartFillCountdown" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stopColor="#fff" />
-                      <stop offset="50%" stopColor="#fef2f2" />
-                      <stop offset="100%" stopColor="#fecaca" />
-                    </linearGradient>
-                    <filter id="heartGlowCountdown">
-                      <feDropShadow dx="0" dy="2" stdDeviation="3" floodColor="#dc2626" floodOpacity="0.2" />
-                    </filter>
-                    <clipPath id="heartClipCountdown" clipPathUnits="objectBoundingBox">
-                      <path d="M 0.5 0.85 C 0.5 0.85 0.1 0.55 0.1 0.35 C 0.1 0.15 0.3 0.05 0.5 0.25 C 0.7 0.05 0.9 0.15 0.9 0.35 C 0.9 0.55 0.5 0.85 0.5 0.85 Z" />
-                    </clipPath>
-                  </defs>
-                  <path
-                    d="M 50 85 C 50 85 10 55 10 35 C 10 15 30 5 50 25 C 70 5 90 15 90 35 C 90 55 50 85 50 85 Z"
-                    fill="url(#heartFillCountdown)"
-                    stroke="#dc2626"
-                    strokeWidth="2.5"
-                    strokeLinejoin="round"
-                    filter="url(#heartGlowCountdown)"
-                  />
-                </svg>
-                <div
-                  className="absolute inset-0 overflow-hidden"
-                  style={{ clipPath: "url(#heartClipCountdown)" }}
+                  <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" aria-hidden>
+                    <defs>
+                      <linearGradient id="heartFillCountdown1" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stopColor="#fff" />
+                        <stop offset="50%" stopColor="#fef2f2" />
+                        <stop offset="100%" stopColor="#fecaca" />
+                      </linearGradient>
+                      <clipPath id="heartClipCountdown1" clipPathUnits="objectBoundingBox">
+                        <path d="M 0.5 0.85 C 0.5 0.85 0.1 0.55 0.1 0.35 C 0.1 0.15 0.3 0.05 0.5 0.25 C 0.7 0.05 0.9 0.15 0.9 0.35 C 0.9 0.55 0.5 0.85 0.5 0.85 Z" />
+                      </clipPath>
+                    </defs>
+                    <path d="M 50 85 C 50 85 10 55 10 35 C 10 15 30 5 50 25 C 70 5 90 15 90 35 C 90 55 50 85 50 85 Z" fill="url(#heartFillCountdown1)" stroke="#dc2626" strokeWidth="2.5" strokeLinejoin="round" />
+                  </svg>
+                  <div className="absolute inset-0 overflow-hidden bg-rose-50/50" style={{ clipPath: "url(#heartClipCountdown1)" }}>
+                    <img src="/milk.png" alt="Hint 1" className="w-full h-full object-cover object-center" />
+                  </div>
+                </button>
+              </div>
+              <div className="flex flex-col items-center gap-2 w-full">
+                <p className="text-base font-semibold uppercase tracking-[0.2em] text-foreground">
+                  Hint 2
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setCountdownExpandedImage("clue2")}
+                  className="relative w-full aspect-square max-w-[420px] cursor-pointer border-0 bg-transparent p-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 rounded-full mx-auto"
+                  style={{
+                    filter: "drop-shadow(0 0 28px rgba(220,38,38,0.25)) drop-shadow(0 24px 48px -12px rgba(185,28,28,0.4))",
+                  }}
+                  aria-label="Expand hint 2"
                 >
-                  <img
-                    src="/milk.png"
-                    alt="Clue 1"
-                    className="w-full h-full object-cover object-center"
-                  />
-                </div>
+                  <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" aria-hidden>
+                    <defs>
+                      <linearGradient id="heartFillCountdown2" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stopColor="#fff" />
+                        <stop offset="50%" stopColor="#fef2f2" />
+                        <stop offset="100%" stopColor="#fecaca" />
+                      </linearGradient>
+                      <clipPath id="heartClipCountdown2" clipPathUnits="objectBoundingBox">
+                        <path d="M 0.5 0.85 C 0.5 0.85 0.1 0.55 0.1 0.35 C 0.1 0.15 0.3 0.05 0.5 0.25 C 0.7 0.05 0.9 0.15 0.9 0.35 C 0.9 0.55 0.5 0.85 0.5 0.85 Z" />
+                      </clipPath>
+                    </defs>
+                    <path d="M 50 85 C 50 85 10 55 10 35 C 10 15 30 5 50 25 C 70 5 90 15 90 35 C 90 55 50 85 50 85 Z" fill="url(#heartFillCountdown2)" stroke="#dc2626" strokeWidth="2.5" strokeLinejoin="round" />
+                  </svg>
+                  <div className="absolute inset-0 overflow-hidden bg-rose-50/50" style={{ clipPath: "url(#heartClipCountdown2)" }}>
+                    <img src="/bee.png" alt="Hint 2" className="w-full h-full object-cover object-center origin-center" style={{ transform: "scale(0.88)", objectPosition: "35% 50%" }} />
+                  </div>
+                </button>
               </div>
             </div>
 
-            {/* Right: countdown to midnight */}
-            <Card className="juicy-card flex-1 w-full max-w-md border-0 bg-white/90 backdrop-blur-md">
-              <CardHeader className="space-y-2 pb-4 px-6 sm:px-8 pt-6 sm:pt-8">
-                <CardTitle className="text-xl sm:text-2xl font-bold text-foreground">
-                  Come back neily bug!!
+            {/* Right: countdown card (867cd94 style) */}
+            <Card className="juicy-card flex-1 w-full max-w-3xl border-0 bg-white/90 backdrop-blur-md">
+              <CardHeader className="space-y-2 pb-4 px-8 sm:px-10 pt-8 sm:pt-10">
+                <CardTitle className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground">
+                  Your next clue arrives at midnight.
                 </CardTitle>
-                <CardDescription className="text-sm sm:text-base text-muted-foreground">
-                  Next clue at midnight • February 15th
+                <CardDescription className="text-base sm:text-lg text-muted-foreground leading-relaxed">
+                  When the clock strikes twelve — get ready, Neil 👀
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-5 px-6 sm:px-8 pb-6 sm:pb-8">
+              <CardContent className="space-y-6 px-8 sm:px-10 pb-8 sm:pb-10">
+                <p className="text-sm sm:text-base uppercase tracking-[0.25em] text-muted-foreground font-medium">
+                  Time until your clue unlocks
+                </p>
+
                 {mounted && timeLeft.total > 0 ? (
-                  <div className="grid grid-cols-4 gap-2 sm:gap-3">
-                    <div className="juicy-countdown-block flex flex-col items-center gap-1">
-                      <div className="text-2xl sm:text-3xl md:text-4xl font-bold tabular-nums text-foreground animate-[countdown-pulse_2s_ease-in-out_infinite]">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 w-full max-w-3xl mx-auto">
+                    <div className="juicy-countdown-block flex flex-col items-center gap-1 sm:gap-2">
+                      <div className="text-3xl xs:text-4xl sm:text-5xl md:text-6xl font-bold tabular-nums text-foreground animate-[countdown-pulse_2s_ease-in-out_infinite]">
                         {String(timeLeft.days).padStart(2, "0")}
                       </div>
-                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Days</p>
+                      <p className="text-xs sm:text-sm font-medium text-muted-foreground uppercase tracking-wider">Days</p>
                     </div>
-                    <div className="juicy-countdown-block flex flex-col items-center gap-1">
-                      <div className="text-2xl sm:text-3xl md:text-4xl font-bold tabular-nums text-foreground animate-[countdown-pulse_2s_ease-in-out_0.5s_infinite]">
+                    <div className="juicy-countdown-block flex flex-col items-center gap-1 sm:gap-2">
+                      <div className="text-3xl xs:text-4xl sm:text-5xl md:text-6xl font-bold tabular-nums text-foreground animate-[countdown-pulse_2s_ease-in-out_0.5s_infinite]">
                         {String(timeLeft.hours).padStart(2, "0")}
                       </div>
-                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Hours</p>
+                      <p className="text-xs sm:text-sm font-medium text-muted-foreground uppercase tracking-wider">Hours</p>
                     </div>
-                    <div className="juicy-countdown-block flex flex-col items-center gap-1">
-                      <div className="text-2xl sm:text-3xl md:text-4xl font-bold tabular-nums text-foreground animate-[countdown-pulse_2s_ease-in-out_1s_infinite]">
+                    <div className="juicy-countdown-block flex flex-col items-center gap-1 sm:gap-2">
+                      <div className="text-3xl xs:text-4xl sm:text-5xl md:text-6xl font-bold tabular-nums text-foreground animate-[countdown-pulse_2s_ease-in-out_1s_infinite]">
                         {String(timeLeft.minutes).padStart(2, "0")}
                       </div>
-                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Min</p>
+                      <p className="text-xs sm:text-sm font-medium text-muted-foreground uppercase tracking-wider">Min</p>
                     </div>
-                    <div className="juicy-countdown-block flex flex-col items-center gap-1">
+                    <div className="juicy-countdown-block flex flex-col items-center gap-1 sm:gap-2">
                       <div
-                        className={`text-2xl sm:text-3xl md:text-4xl font-bold tabular-nums text-foreground ${
+                        className={`text-3xl xs:text-4xl sm:text-5xl md:text-6xl font-bold tabular-nums text-foreground ${
                           timeLeft.seconds <= 10 && timeLeft.seconds > 0
                             ? "animate-[countdown-final_0.5s_ease-in-out_infinite]"
                             : "animate-[countdown-pulse_2s_ease-in-out_1.5s_infinite]"
@@ -348,21 +308,31 @@ export default function Home() {
                       >
                         {String(timeLeft.seconds).padStart(2, "0")}
                       </div>
-                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Sec</p>
+                      <p className="text-xs sm:text-sm font-medium text-muted-foreground uppercase tracking-wider">Sec</p>
                     </div>
                   </div>
                 ) : (
-                  <div className="text-2xl sm:text-3xl font-bold text-foreground tabular-nums">
+                  <div className="text-4xl xs:text-5xl sm:text-6xl md:text-7xl font-bold text-foreground tabular-nums">
                     {mounted ? "00 : 00 : 00 : 00" : "Loading..."}
                   </div>
                 )}
-                <p className="text-sm text-muted-foreground italic pt-2">
-                  p.s. check your email, especially your spam
+
+                <p className="text-base sm:text-lg text-muted-foreground font-medium">
+                  ⏰ Midnight • February 16th, 2026
                 </p>
+
+                {secondClueUnlocked && (
+                  <Button
+                    onClick={() => setPhase("theme")}
+                    className="juicy-btn w-full sm:w-auto rounded-xl border-0 text-white font-semibold"
+                  >
+                    Get next hint →
+                  </Button>
+                )}
                 <Button
                   variant="outline"
                   onClick={() => setPhase("intro")}
-                  className="mt-4 rounded-xl border-2 border-rose-300 font-semibold w-full sm:w-auto"
+                  className="rounded-xl border-2 border-rose-300 font-semibold w-full sm:w-auto"
                 >
                   ← Back
                 </Button>
@@ -371,97 +341,27 @@ export default function Home() {
           </div>
         )}
 
-        {/* ——— QUORDLE (second clue) ——— */}
-        {phase === "quordle" && (
-          <div className="w-full max-w-4xl mx-auto px-4 py-8 animate-[countdown-enter_0.5s_ease-out]">
-            <Card className="juicy-card border-0 bg-gradient-to-b from-white via-white/98 to-rose-50/80 backdrop-blur-md shadow-xl shadow-rose-900/10">
-              <CardHeader className="text-center pb-6 pt-8 px-6 sm:px-10">
-                <CardTitle className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/90 bg-clip-text text-transparent">
-                  Second clue — guess all four words, Neil honey
-                </CardTitle>
-                <CardDescription className="text-sm text-muted-foreground mt-2 max-w-md mx-auto">
-                  9 tries • same guess counts for all four • green = right letter right spot, yellow = right letter wrong spot • valid 5-letter words only
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-8 pb-10 px-4 sm:px-8">
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
-                  {([0, 1, 2, 3] as const).map((gridIndex) => (
-                    <div key={gridIndex} className="flex flex-col gap-1.5 p-3 rounded-2xl bg-white/60 border border-rose-100 shadow-inner">
-                      {Array.from({ length: QUORDLE_ROWS }, (_, rowIndex) => (
-                        <div key={rowIndex} className="flex gap-1.5 justify-center">
-                          {Array.from({ length: 5 }, (_, colIndex) => {
-                            const entry = quordleHistory[rowIndex];
-                            const letter = entry?.guess[colIndex] ?? "";
-                            const state = entry?.feedbacks[gridIndex]?.[colIndex];
-                            const bg =
-                              state === "correct"
-                                ? "bg-emerald-600 shadow-md shadow-emerald-800/30 text-white"
-                                : state === "present"
-                                  ? "bg-amber-400 shadow-md shadow-amber-600/30 text-amber-950"
-                                  : state === "absent"
-                                    ? "bg-zinc-400/80 text-white"
-                                    : "bg-white/80 border-2 border-rose-200/80 text-muted-foreground shadow-sm";
-                            return (
-                              <div
-                                key={`${rowIndex}-${colIndex}`}
-                                className={`w-9 h-9 sm:w-11 sm:h-11 flex items-center justify-center rounded-lg font-bold text-base sm:text-lg ${bg} transition-all duration-200`}
-                              >
-                                {letter.toUpperCase()}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      ))}
-                    </div>
-                  ))}
-                </div>
-                {quordleFailed && (
-                  <div className="text-center space-y-4 pt-4">
-                    <p className="text-lg font-semibold text-destructive">
-                      You failed Neily poo, is your love for me fake?
-                    </p>
-                    <p className="text-muted-foreground text-sm">
-                      Refresh the page and try again.
-                    </p>
-                  </div>
-                )}
-                {!allFourSolved && !quordleFailed && quordleHistory.length < QUORDLE_ROWS && (
-                  <div className="flex flex-col sm:flex-row gap-3 items-center justify-center">
-                    <Input
-                      value={quordleGuess}
-                      onChange={(e) => {
-                        setQuordleGuess(e.target.value.slice(0, 5).toLowerCase());
-                        setQuordleError("");
-                      }}
-                      onKeyDown={(e) => e.key === "Enter" && submitQuordleGuess()}
-                      placeholder="5-letter word"
-                      className="w-full sm:w-52 h-12 text-center text-lg font-mono uppercase tracking-widest rounded-xl border-2 border-rose-200/80 focus:border-primary shadow-sm"
-                      maxLength={5}
-                    />
-                    <Button
-                      onClick={submitQuordleGuess}
-                      disabled={quordleGuess.length !== 5 || quordleChecking}
-                      className="juicy-btn rounded-xl h-12 px-8 text-white border-0 font-semibold shadow-lg shadow-rose-900/25"
-                    >
-                      {quordleChecking ? "…" : "Guess"}
-                    </Button>
-                  </div>
-                )}
-                {quordleError && !quordleFailed && (
-                  <p className="text-center text-destructive text-sm font-medium">{quordleError}</p>
-                )}
-                {allFourSolved && (
-                  <div className="text-center space-y-4 pt-2">
-                    <p className="text-lg font-semibold text-foreground">You did it, Neil honey! 💕</p>
-                    <Button onClick={() => setPhase("theme")} className="juicy-btn rounded-xl text-white border-0 px-8 shadow-lg shadow-rose-900/25">
-                      One more question →
-                    </Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        )}
+        {/* Countdown: full-screen overlay when a hint heart is clicked */}
+        {typeof document !== "undefined" &&
+          phase === "countdown" &&
+          countdownExpandedImage &&
+          createPortal(
+            <button
+              type="button"
+              className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/90 p-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+              onClick={() => setCountdownExpandedImage(null)}
+              onKeyDown={(e) => e.key === "Escape" && setCountdownExpandedImage(null)}
+              aria-label="Close"
+            >
+              <img
+                src={countdownExpandedImage === "clue1" ? "/milk.png" : "/bee.png"}
+                alt={countdownExpandedImage === "clue1" ? "Hint 1 — full view" : "Hint 2 — full view"}
+                className="max-w-full max-h-[90vh] w-auto h-auto object-contain pointer-events-none select-none"
+                draggable={false}
+              />
+            </button>,
+            document.body
+          )}
 
         {/* ——— THEME QUESTION ——— */}
         {phase === "theme" && (
