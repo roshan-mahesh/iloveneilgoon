@@ -144,6 +144,94 @@ button.juicy-btn:active:not(:disabled),
     inset 0 1px 0 rgba(255, 255, 255, 0.8);
 }
 
+/* Corner heart countdown: dramatic pulse */
+.countdown-dramatic .countdown-digit {
+  animation: countdown-digit-pulse 2s ease-in-out infinite;
+}
+.countdown-dramatic .countdown-digit:nth-child(3) {
+  animation-delay: 0.15s;
+}
+.countdown-dramatic .countdown-digit:nth-child(5) {
+  animation-delay: 0.3s;
+}
+.countdown-dramatic .countdown-seconds span:first-child {
+  animation: countdown-seconds-tick 1s ease-in-out infinite;
+}
+@keyframes countdown-digit-pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.08);
+    opacity: 0.95;
+  }
+}
+@keyframes countdown-seconds-tick {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.12);
+  }
+}
+
+/* ——— Dedicated countdown page: floating particles ——— */
+@keyframes float-particle {
+  0%, 100% {
+    transform: translate(0, 0) scale(0.8) rotate(0deg);
+    opacity: 0.35;
+  }
+  25% {
+    transform: translate(12px, -20px) scale(1) rotate(10deg);
+    opacity: 0.6;
+  }
+  50% {
+    transform: translate(-8px, -35px) scale(0.9) rotate(-5deg);
+    opacity: 0.5;
+  }
+  75% {
+    transform: translate(-15px, -15px) scale(1.05) rotate(8deg);
+    opacity: 0.6;
+  }
+}
+
+/* Countdown page: dramatic blocks with pulse */
+.countdown-page-blocks .countdown-page-digit {
+  animation: countdown-block-pulse 2s ease-in-out infinite;
+}
+.countdown-page-blocks .countdown-page-digit:nth-child(1) { animation-delay: 0s; }
+.countdown-page-blocks .countdown-page-digit:nth-child(2) { animation-delay: 0.2s; }
+.countdown-page-blocks .countdown-page-digit:nth-child(3) { animation-delay: 0.4s; }
+.countdown-page-blocks .countdown-page-digit:nth-child(4) { animation-delay: 0.6s; }
+@keyframes countdown-block-pulse {
+  0%, 100% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 12px rgba(220, 38, 38, 0.2));
+  }
+  50% {
+    transform: scale(1.05);
+    filter: drop-shadow(0 0 24px rgba(220, 38, 38, 0.4));
+  }
+}
+
+.countdown-page-number {
+  text-shadow: 0 0 20px rgba(255, 255, 255, 0.6), 0 2px 8px rgba(220, 38, 38, 0.3);
+}
+
+/* Urgent shake when seconds <= 10 */
+.countdown-page-seconds-urgent .countdown-page-number {
+  animation: countdown-shake 0.5s ease-in-out infinite;
+}
+@keyframes countdown-shake {
+  0%, 100% { transform: translateX(0) scale(1); }
+  15% { transform: translateX(-4px) scale(1.08); }
+  30% { transform: translateX(4px) scale(1.08); }
+  45% { transform: translateX(-3px) scale(1.04); }
+  60% { transform: translateX(3px) scale(1.04); }
+  75% { transform: translateX(-2px) scale(1.02); }
+}
+
 /* Hearts expanding toward viewer (cycle) */
 @keyframes heart-expand {
   0% {
@@ -390,6 +478,96 @@ button.juicy-btn:active:not(:disabled),
     opacity: 1;
     transform: scale(1) rotate(0deg);
   }
+}
+
+/* Grand reveal: heart pops in big and dramatic */
+@keyframes reveal-heart-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.2);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+  80% {
+    transform: scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Full-screen flash when entering reveal */
+@keyframes reveal-flash {
+  0% {
+    opacity: 1;
+  }
+  25% {
+    opacity: 0.85;
+  }
+  50% {
+    opacity: 0.4;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* Stronger full-screen flash for grand reveal */
+@keyframes reveal-flash-strong {
+  0% {
+    opacity: 1;
+  }
+  15% {
+    opacity: 1;
+  }
+  40% {
+    opacity: 0.5;
+  }
+  70% {
+    opacity: 0.15;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* Grand reveal heart: spin up and pop dramatically */
+@keyframes reveal-heart-grand {
+  0% {
+    opacity: 0;
+    transform: scale(0.05) rotate(-220deg);
+  }
+  25% {
+    opacity: 0.9;
+    transform: scale(0.65) rotate(-110deg);
+  }
+  45% {
+    opacity: 1;
+    transform: scale(1.32) rotate(18deg);
+  }
+  62% {
+    transform: scale(0.92) rotate(-5deg);
+  }
+  78% {
+    transform: scale(1.06) rotate(3deg);
+  }
+  90% {
+    transform: scale(0.98) rotate(-1deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+/* Reveal heart: pop then endless glow pulse */
+.reveal-heart-with-pulse {
+  animation:
+    reveal-heart-grand 1.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.4s both,
+    reveal-glow-pulse 3s ease-in-out 2s infinite;
 }
 
 .dark {
